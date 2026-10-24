@@ -1,0 +1,19 @@
+diff --git a/hw/pci-host/prep.c b/hw/pci-host/prep.c
+index a2bae23..a1340f8 100644
+--- a/hw/pci-host/prep.c
++++ b/hw/pci-host/prep.c
+@@ -128,8 +128,12 @@ static inline hwaddr raven_io_address(PREPPCIState *s,
+                                       hwaddr addr)
+ {
+     if (s->contiguous_map == 0) {
+-        /* 64 KB contiguous space for IOs */
+-        addr &= 0xFFFF;
++        /*
++         * Contiguous mode (PReP Memory Map A): CPU 0x80000000 + N is PCI
++         * I/O port N for the whole window, not just the ISA 64 KB. AIX
++         * assigns PCI I/O BARs above 0xFFFF (e.g. 0x10000 for ent0), and
++         * masking here aliased them onto the ISA DMA controller.
++         */
+     } else {
+         /* 8 MB non-contiguous space for IOs */
+         addr = (addr & 0x1F) | ((addr & 0x007FFF000) >> 7);
