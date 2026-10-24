@@ -16,7 +16,7 @@ AIX localhost 3 4 000000004C00
 ```
 
 **You must build the QEMU fork (`make qemu`).** Stock `qemu-system-ppc` from
-Debian cannot boot AIX on the 40p machine — see
+Debian cannot boot AIX on the 40p machine - see
 [Why stock QEMU does not work](#why-stock-qemu-does-not-work).
 
 `Disc01.iso` is the bootable install disc (type-`0x41` PReP boot partition,
@@ -88,7 +88,7 @@ its console:
  Type a 1 and press Enter to use this terminal as the system console.
 ```
 
-Press `1` and Enter — **your keypress is not echoed.** Then pick `vt100` as
+Press `1` and Enter - **your keypress is not echoed.** Then pick `vt100` as
 the terminal type.
 
 There is no QEMU window. AIX cannot boot at all while a graphics adapter is
@@ -96,7 +96,7 @@ on the bus, so every target that boots AIX is serial-only and refuses
 `CONSOLE=gui`; `make of` is the one target that still takes it. See [The
 window and the console](#the-window-and-the-console).
 
-Function keys are `ESC` then the digit — F3 is `ESC` `3`. Log in as `root`,
+Function keys are `ESC` then the digit - F3 is `ESC` `3`. Log in as `root`,
 no password.
 
 On the first boot AIX shows the Installation Assistant (a SMIT menu). Pick
@@ -112,7 +112,7 @@ time without anything being wrong.
 | Target | Purpose |
 | --- | --- |
 | `make boot-serial` | Synonym for `make boot`, kept for muscle memory |
-| `make of` | Firmware prompt only, no disk or CD — the one `CONSOLE=gui` target |
+| `make of` | Firmware prompt only, no disk or CD - the one `CONSOLE=gui` target |
 | `make cd2` | Boot installed system with `Disc02.iso` in the drive |
 | `make swap DISC=Disc03.iso` | Same, with any disc (for post-install filesets) |
 | `make probe` | Check which `Disc*.iso` are bootable |
@@ -146,8 +146,8 @@ Rebooting with command: boot /pci/scsi@1/disk@0,0:1
 Boot device: /pci/scsi@1/disk@0,0:1  Arguments:
 ```
 
-The guest reads ~35 MB off the disk — the kernel and the boot-phase root FS
-load fine — then stops reading and stays that way for as long as you leave
+The guest reads ~35 MB off the disk - the kernel and the boot-phase root FS
+load fine - then stops reading and stays that way for as long as you leave
 it. It is not a crash: see [what it is actually
 waiting for](#what-it-is-actually-waiting-for) below.
 
@@ -157,7 +157,7 @@ Holding the firmware ROM constant and toggling only the adapter isolates it:
 | --- | --- | --- |
 | `q40pofw-serial.rom` | `none` | boots; console prompt on the serial line |
 | `q40pofw-serial.rom` | `s3` | hangs, nothing after `Boot device:` |
-| `q40pofw-vga.rom` | `s3` | hangs — this was the old `make boot` |
+| `q40pofw-vga.rom` | `s3` | hangs - this was the old `make boot` |
 
 So it is the card's presence, not the VGA ROM and not the window. On every
 boot AIX asks which device to use as its console:
@@ -168,7 +168,7 @@ boot AIX asks which device to use as its console:
 ```
 
 With no display adapter that prompt goes to the serial line and you answer
-it. With the S3 present AIX sends it to the display instead — and the
+it. With the S3 present AIX sends it to the display instead - and the
 display is where it dies.
 
 **The driver is not missing.** All of it is installed and committed:
@@ -191,7 +191,7 @@ iga0   Defined  04-02  GXT110P Graphics Adapter
 lft0   Defined         Low Function Terminal Subsystem
 ```
 
-`devices.pci.33531188` is AIX's name for PCI `5333:8811` — exactly the S3
+`devices.pci.33531188` is AIX's name for PCI `5333:8811` - exactly the S3
 Trio the fork emulates (`PCI_VENDOR_ID_S3` / `PCI_DEVICE_ID_S3_TRIO` in
 `hw/display/s3_vga.c`), which QEMU puts at `04-02`, the slot `iga0` names.
 So AIX has the right driver for the right card, and does run it: on a
@@ -219,8 +219,8 @@ CR53 = 0x08                 ; enable MMIO   <- last S3 I/O access, ever
 
 Earlier in the same trace sit `CR53=0x08` / `CR53=0x00` probe pairs: the
 driver testing MMIO by writing a register and reading it back. Nothing in
-`hw/display/` implements S3 MMIO — grepping `s3_vga.c` and `vga.c` for
-`CR53` or `mmio` comes back empty — so that window is plain video RAM, the
+`hw/display/` implements S3 MMIO - grepping `s3_vga.c` and `vga.c` for
+`CR53` or `mmio` comes back empty - so that window is plain video RAM, the
 read-back test passes, and the driver concludes MMIO works.
 
 It does not then hammer that window, though. Instrumenting `vga_mem_ops` to
@@ -240,13 +240,13 @@ console prompt:
 | `pic0` / `pic1` masks | `imr=fb` / `imr=df` | identical |
 
 With a display on the bus AIX picks the LFT and never sets up a serial
-console at all — which is why the serial line goes silent at `Boot device:`
+console at all - which is why the serial line goes silent at `Boot device:`
 and stays silent. The interrupt masks are identical in both cases, so
 nothing is being masked off abnormally.
 
 **Keyboard input never reaches the guest.** Sending `1` + Enter three times
-through the QEMU monitor leaves IRQ 1 unchanged — `630` before, `630`
-after — in the stalled boot and the healthy one alike. The firmware's own
+through the QEMU monitor leaves IRQ 1 unchanged - `630` before, `630`
+after - in the stalled boot and the healthy one alike. The firmware's own
 use of the keyboard *does* raise IRQ 1 (that is where the 630 came from), so
 the i8042 itself works; it is keystrokes delivered after AIX takes over that
 produce nothing.
@@ -258,7 +258,7 @@ serial fallback because AIX never opened one.
 Making the window real is therefore not an AIX-side task, and not a
 one-register fix. It needs S3 MMIO implemented in the fork's device model
 *and* the LFT's keyboard path working, with no reference implementation to
-copy — mainline QEMU never implemented S3 MMIO either. Until someone does
+copy - mainline QEMU never implemented S3 MMIO either. Until someone does
 that work the card has to stay off the bus, which is what the Makefile
 enforces.
 
@@ -430,7 +430,7 @@ NIP=1002062c  MSR=0000f030
 ```
 
 `0x10000000` is AIX's standard text base for userspace binaries. So the kernel
-booted, the MMU is up, and userspace is running — it just polls forever.
+booted, the MMU is up, and userspace is running - it just polls forever.
 Things that were checked and are *not* the cause:
 
 * The CD reads fine; SCSI is working.
@@ -450,7 +450,7 @@ pci_vga_init(pci_bus);          /* hw/ppc/prep.c */
 The real 7020-40P had an S3 graphics adapter, which the fork emulates and
 mainline substitutes with a generic VGA. Mainline's `lsi53c810` is also only a
 PCI device-ID override of the 53C895A model and still exposes the full `0x400`
-register window instead of the real chip's `0x80` — the source comments
+register window instead of the real chip's `0x80` - the source comments
 "LSI53C810 emulation is incorrect".
 
 On the fork the same boot reaches the console prompt in six languages:
@@ -464,14 +464,14 @@ the bus and the fork runs did not, so the two differ by more than the QEMU
 build, and [the hang that causes](#the-window-and-the-console) was not known
 when this was written. Mainline's trace (`NIP=1002xxxx`, user mode) is a
 later stage than console selection, so they are not obviously the same
-failure — but mainline deserves a re-test with `-vga none` before this
+failure - but mainline deserves a re-test with `-vga none` before this
 section is taken as settled.
 
 ### Building the fork on a modern toolchain
 
 The fork is 2019-era C and GCC 14 defaults to C23, making implicit function
 declarations and int/pointer conversions hard errors. `scripts/build-qemu.sh`
-demotes exactly those three to warnings, which is enough — none of the
+demotes exactly those three to warnings, which is enough - none of the
 extensive `--disable` flag-hunting described in older write-ups was needed.
 
 ## Appendix: why AIX 3.2.5 media does not work
@@ -481,7 +481,7 @@ RS/6000 (POWER/RIOS)**, and could not boot at all.
 
 QEMU's 40p firmware boots AIX from partition 2 of a PReP partition table (an
 MBR with a type-`0x41` entry). The 3.2.5 disc had no partition table; sector 0
-began `c9 c2 d4 c1`, which is `IBMA` in EBCDIC — the older RS/6000 IPL record
+began `c9 c2 d4 c1`, which is `IBMA` in EBCDIC - the older RS/6000 IPL record
 used before AIX 4. `.partitions cdrom` returned an empty table and every
 `boot` variant failed with "The attempt to load a boot image failed."
 
@@ -505,5 +505,5 @@ Both firmware ROMs come from
 [artyom-tarasenko/openfirmware](https://github.com/artyom-tarasenko/openfirmware)
 release `40p-20190413` and are checksum-pinned in the Makefile:
 `q40pofw-serial.rom` for the serial targets, `q40pofw-vga.rom` for the window
-that `make boot` opens. The framebuffer works on the fork — the dead one
+that `make boot` opens. The framebuffer works on the fork - the dead one
 described above is mainline's generic VGA, not the fork's S3.
